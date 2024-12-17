@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-// import Menu from './components/menu';
-// import Plate from './components/plate';
-// import Summary from './components/summary';
 import { menuConfig } from "./components/menuConfig";
-import Login from './components/login'; // Import the Login component
+import Login from './components/login';
+import UserQuestionnaire from './components/UserQuestionnaire';
 import './App.css';
 
 const styles = {
@@ -97,10 +95,10 @@ const styles = {
       fontWeight: 'bold',
       marginBottom: '0.5rem'
     }
-  };
+};
 
 const App = () => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false); // To track login status
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [selectedSquare, setSelectedSquare] = useState(null);
     const [components, setComponents] = useState([]);
     const [currentStep, setCurrentStep] = useState("initial");
@@ -110,15 +108,7 @@ const App = () => {
         item: null,
         method: null,
         temp: null,
-      });
-
-    // const [selectionState, setSelectionState] = useState({
-    //     category: null,
-    //     subcategory: null,
-    //     item: null,
-    //     method: null,
-    //     temp: null,
-    // });
+    });
 
     const isSquareOccupied = (index) => {
         return components.some(comp => {
@@ -131,17 +121,17 @@ const App = () => {
             return comp.position === index;
           }
         });
-      };
-      const handleSquareClick = (index) => {
+    };
+
+    const handleSquareClick = (index) => {
         if (currentStep !== "select-square" || isSquareOccupied(index)) return;
-        
         setSelectedSquare(index);
         setCurrentStep("select-category");
-      };
-      const deleteComponent = (index) => {
+    };
+
+    const deleteComponent = (index) => {
         setComponents(components.filter((_, i) => i !== index));
-      };
-    
+    };
 
     const resetSelections = () => {
         setSelectedSquare(null);
@@ -154,10 +144,12 @@ const App = () => {
         });
         setCurrentStep("initial");
     };
+
     const handleItemSelect = (item) => {
         setSelectionState(prev => ({ ...prev, item }));
         setCurrentStep("select-method");
-      };
+    };
+
     const addComponent = (method, temp = null) => {
         const spaces =
             selectionState.category === "Protein" &&
@@ -178,14 +170,17 @@ const App = () => {
         setComponents([...components, newComponent]);
         resetSelections();
     };
+
     const handleCategorySelect = (category) => {
         setSelectionState(prev => ({ ...prev, category }));
         setCurrentStep(category === "Protein" ? "select-subcategory" : "select-item");
-      };
+    };
+
     const handleSubcategorySelect = (subcategory) => {
         setSelectionState(prev => ({ ...prev, subcategory }));
         setCurrentStep("select-item");
-      };
+    };
+
     const handleMethodSelect = (method) => {
         setSelectionState(prev => ({ ...prev, method }));
         if (selectionState.category === "Protein" && selectionState.subcategory === "Beef") {
@@ -193,223 +188,229 @@ const App = () => {
         } else {
           addComponent(method);
         }
-      };
-    const handleTempSelect = (temp) => {
-    addComponent(selectionState.method, temp);
     };
-    
 
-    // const deleteComponent = (index) => {
-    //     setComponents(components.filter((_, i) => i !== index));
-    // };
+    const handleTempSelect = (temp) => {
+        addComponent(selectionState.method, temp);
+    };
+
+    const MainContent = () => (
+        <div style={styles.container}>
+            <div style={styles.mainContent}>
+                <h1 style={styles.heading}>Make your plate!</h1>
+                <div style={styles.plateContainer}>
+                    {[...Array(6)].map((_, i) => (
+                        <div
+                            key={i}
+                            style={{
+                                ...styles.square,
+                                ...(currentStep === 'select-square' &&
+                                    !isSquareOccupied(i) &&
+                                    styles.squareHover),
+                                ...(selectedSquare === i && styles.squareSelected),
+                                ...(isSquareOccupied(i) && styles.squareOccupied),
+                            }}
+                            onClick={() => handleSquareClick(i)}
+                        />
+                    ))}
+
+                    {components.map((comp, idx) => (
+                        <div
+                            key={idx}
+                            style={{
+                                position: 'absolute',
+                                backgroundColor:
+                                    comp.category === 'Protein' ? '#FFF8DC' : '#FFFACD',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                textAlign: 'center',
+                                padding: '4px',
+                                border: '1px solid #DEB887',
+                                transition: 'all 300ms',
+                                ...(comp.spaces === 4
+                                    ? {
+                                          width: '66.66%',
+                                          height: '100%',
+                                          left: comp.position === 0 ? '0' : '33.33%',
+                                          top: '0',
+                                      }
+                                    : {
+                                          width: '33.33%',
+                                          height: '50%',
+                                          left: `${(comp.position % 3) * 33.33}%`,
+                                          top: `${Math.floor(comp.position / 3) * 50}%`,
+                                      }),
+                            }}
+                        >
+                            {comp.item}
+                        </div>
+                    ))}
+                </div>
+
+                {currentStep === "initial" && (
+                    <div style={styles.selectionContainer}>
+                        <button
+                            style={styles.buttonPrimary}
+                            onClick={() => setCurrentStep("select-square")}
+                        >
+                            Add Component
+                        </button>
+                    </div>
+                )}
+
+                {currentStep === "select-square" && (
+                    <div style={styles.selectionContainer}>
+                        <h2 style={styles.subHeading}>Select a position on the plate</h2>
+                    </div>
+                )}
+
+                {currentStep === "select-category" && (
+                    <div style={styles.selectionContainer}>
+                        <h2 style={styles.subHeading}>Select Category</h2>
+                        <div>
+                            {Object.keys(menuConfig.foodOptions).map(category => (
+                                <button
+                                    key={category}
+                                    style={styles.button}
+                                    onClick={() => handleCategorySelect(category)}
+                                >
+                                    {category}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {currentStep === "select-subcategory" && (
+                    <div style={styles.selectionContainer}>
+                        <h2 style={styles.subHeading}>Select Type</h2>
+                        <div>
+                            {Object.keys(menuConfig.foodOptions.Protein).map(subcat => (
+                                <button
+                                    key={subcat}
+                                    style={styles.button}
+                                    onClick={() => handleSubcategorySelect(subcat)}
+                                >
+                                    {subcat}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {currentStep === "select-item" && (
+                    <div style={styles.selectionContainer}>
+                        <h2 style={styles.subHeading}>Select Item</h2>
+                        <div>
+                            {(selectionState.category === "Protein" 
+                                ? menuConfig.foodOptions.Protein[selectionState.subcategory]
+                                : menuConfig.foodOptions[selectionState.category]
+                            ).map(item => (
+                                <button
+                                    key={item}
+                                    style={styles.button}
+                                    onClick={() => handleItemSelect(item)}
+                                >
+                                    {item}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {currentStep === "select-method" && (
+                    <div style={styles.selectionContainer}>
+                        <h2 style={styles.subHeading}>Select Cooking Method</h2>
+                        <div>
+                            {(selectionState.category === "Protein" 
+                                ? menuConfig.cookingMethods[selectionState.subcategory]
+                                : menuConfig.cookingMethods[selectionState.category]
+                            ).map(method => (
+                                <button
+                                    key={method}
+                                    style={styles.button}
+                                    onClick={() => handleMethodSelect(method)}
+                                >
+                                    {method}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {currentStep === "select-temp" && (
+                    <div style={styles.selectionContainer}>
+                        <h2 style={styles.subHeading}>Select Temperature</h2>
+                        <div>
+                            {menuConfig.temperatures.map(temp => (
+                                <button
+                                    key={temp}
+                                    style={styles.button}
+                                    onClick={() => handleTempSelect(temp)}
+                                >
+                                    {temp}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div style={styles.sidebar}>
+                <h2 style={styles.heading}>Selected Components</h2>
+                {components.map((comp, idx) => (
+                    <div key={idx} style={styles.componentCard}>
+                        <button
+                            style={styles.deleteButton}
+                            onClick={() => deleteComponent(idx)}
+                        >
+                            ×
+                        </button>
+                        <h3 style={styles.subHeading}>Component {idx + 1}:</h3>
+                        <p>
+                            {comp.temp && `${comp.temp} `}
+                            {comp.item} ({comp.method})
+                        </p>
+                        <p style={{ color: '#666', fontSize: '0.9rem' }}>
+                            Spaces: {comp.spaces}
+                        </p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
 
     return (
         <Router>
             <Routes>
-                {/* Public Route for Login */}
                 <Route
                     path="/login"
                     element={
                         <Login
-                            onLoginSuccess={() => setIsAuthenticated(true)} // Pass login success handler
+                            onLoginSuccess={() => setIsAuthenticated(true)}
                         />
                     }
                 />
+                
+                <Route
+                    path="/questionnaire"
+                    element={
+                        isAuthenticated ? (
+                            <UserQuestionnaire />
+                        ) : (
+                            <Navigate to="/login" replace />
+                        )
+                    }
+                />
 
-                {/* Protected Route for Main App */}
                 <Route
                     path="/"
                     element={
                         isAuthenticated ? (
-                            <div style={styles.container}>
-                                <div style={styles.mainContent}>
-                                    <h1 style={styles.heading}>Make your plate!</h1>
-                                    <div style={styles.plateContainer}>
-                                        {[...Array(6)].map((_, i) => (
-                                            <div
-                                                key={i}
-                                                style={{
-                                                    ...styles.square,
-                                                    ...(currentStep === 'select-square' &&
-                                                        !isSquareOccupied(i) &&
-                                                        styles.squareHover),
-                                                    ...(selectedSquare === i && styles.squareSelected),
-                                                    ...(isSquareOccupied(i) && styles.squareOccupied),
-                                                }}
-                                                onClick={() => handleSquareClick(i)}
-                                            />
-                                        ))}
-
-                                        {/* Render components */}
-                                        {components.map((comp, idx) => (
-                                            <div
-                                                key={idx}
-                                                style={{
-                                                    position: 'absolute',
-                                                    backgroundColor:
-                                                        comp.category === 'Protein' ? '#FFF8DC' : '#FFFACD',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    textAlign: 'center',
-                                                    padding: '4px',
-                                                    border: '1px solid #DEB887',
-                                                    transition: 'all 300ms',
-                                                    ...(comp.spaces === 4
-                                                        ? {
-                                                              width: '66.66%',
-                                                              height: '100%',
-                                                              left: comp.position === 0 ? '0' : '33.33%',
-                                                              top: '0',
-                                                          }
-                                                        : {
-                                                              width: '33.33%',
-                                                              height: '50%',
-                                                              left: `${(comp.position % 3) * 33.33}%`,
-                                                              top: `${Math.floor(comp.position / 3) * 50}%`,
-                                                          }),
-                                                }}
-                                            >
-                                                {comp.item}
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    {currentStep === "initial" && (
-                                        <div style={styles.selectionContainer}>
-                                            <button
-                                                style={styles.buttonPrimary}
-                                                onClick={() => setCurrentStep("select-square")}
-                                            >
-                                                Add Component
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    {/* Other selection steps */}
-                                    {currentStep === "select-square" && (
-                                        <div style={styles.selectionContainer}>
-                                            <h2 style={styles.subHeading}>Select a position on the plate</h2>
-                                        </div>
-                                    )}
-
-                                {currentStep === "select-category" && (
-                                <div style={styles.selectionContainer}>
-                                    <h2 style={styles.subHeading}>Select Category</h2>
-                                    <div>
-                                    {Object.keys(menuConfig.foodOptions).map(category => (
-                                        <button
-                                        key={category}
-                                        style={styles.button}
-                                        onClick={() => handleCategorySelect(category)}
-                                        >
-                                        {category}
-                                        </button>
-                                    ))}
-                                    </div>
-                                </div>
-                                )}
-
-                                {currentStep === "select-subcategory" && (
-                                <div style={styles.selectionContainer}>
-                                    <h2 style={styles.subHeading}>Select Type</h2>
-                                    <div>
-                                    {Object.keys(menuConfig.foodOptions.Protein).map(subcat => (
-                                        <button
-                                        key={subcat}
-                                        style={styles.button}
-                                        onClick={() => handleSubcategorySelect(subcat)}
-                                        >
-                                        {subcat}
-                                        </button>
-                                    ))}
-                                    </div>
-                                </div>
-                                )}
-
-                                {currentStep === "select-item" && (
-                                <div style={styles.selectionContainer}>
-                                    <h2 style={styles.subHeading}>Select Item</h2>
-                                    <div>
-                                    {(selectionState.category === "Protein" 
-                                        ? menuConfig.foodOptions.Protein[selectionState.subcategory]
-                                        : menuConfig.foodOptions[selectionState.category]
-                                    ).map(item => (
-                                        <button
-                                        key={item}
-                                        style={styles.button}
-                                        onClick={() => handleItemSelect(item)}
-                                        >
-                                        {item}
-                                        </button>
-                                    ))}
-                                    </div>
-                                </div>
-                                )}
-
-                                {currentStep === "select-method" && (
-                                <div style={styles.selectionContainer}>
-                                    <h2 style={styles.subHeading}>Select Cooking Method</h2>
-                                    <div>
-                                    {(selectionState.category === "Protein" 
-                                        ? menuConfig.cookingMethods[selectionState.subcategory]
-                                        : menuConfig.cookingMethods[selectionState.category]
-                                    ).map(method => (
-                                        <button
-                                        key={method}
-                                        style={styles.button}
-                                        onClick={() => handleMethodSelect(method)}
-                                        >
-                                        {method}
-                                        </button>
-                                    ))}
-                                    </div>
-                                </div>
-                                )}
-
-                                {currentStep === "select-temp" && (
-                                <div style={styles.selectionContainer}>
-                                    <h2 style={styles.subHeading}>Select Temperature</h2>
-                                    <div>
-                                    {menuConfig.temperatures.map(temp => (
-                                        <button
-                                        key={temp}
-                                        style={styles.button}
-                                        onClick={() => handleTempSelect(temp)}
-                                        >
-                                        {temp}
-                                        </button>
-                                    ))}
-                                    </div>
-                                </div>
-                                )}
-                            </div>
-
-                                {/* Selected Components Display */}
-                                <div style={styles.sidebar}>
-                                    <h2 style={styles.heading}>Selected Components</h2>
-                                    {components.map((comp, idx) => (
-                                        <div key={idx} style={styles.componentCard}>
-                                            <button
-                                                style={styles.deleteButton}
-                                                onClick={() => deleteComponent(idx)}
-                                            >
-                                                ×
-                                            </button>
-                                            <h3 style={styles.subHeading}>Component {idx + 1}:</h3>
-                                            <p>
-                                                {comp.temp && `${comp.temp} `}
-                                                {comp.item} ({comp.method})
-                                            </p>
-                                            <p style={{ color: '#666', fontSize: '0.9rem' }}>
-                                                Spaces: {comp.spaces}
-                                            </p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                            <MainContent />
                         ) : (
-                            <Navigate to="/login" replace /> // Redirect if not logged in
+                            <Navigate to="/login" replace />
                         )
                     }
                 />
