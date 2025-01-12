@@ -1,25 +1,41 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const SurveyQuestions = () => {
     const navigate = useNavigate();
+    const user_id = localStorage.getItem('user_id');
     const [answers, setAnswers] = useState({
         ageGroup: '',
-        meatConsumed: [],
-        dietaryRestrictions: [],
-        foodAllergies: [],
-        sweetTooth: '',
-        spiceLevel: '',
-        favoriteDrink: '',
-        healthIndulgence: '',
+        preferred_meat: [],
+        vegetarian_meat: [],
+        allergies: [],
+        sweet_tooth: '',
+        spice_level: '',
+        // favoriteDrink: '',
+        healthy_or_calorie_heavy: '',
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Survey answers:', answers);
-        navigate('/'); // Navigate to the main app after submission
+        try {
+            console.log(user_id);
+            const response = await axios.post(
+                'http://localhost:5000/api/survey/post_answers',
+                { answers, user_id},
+            );
+            console.log('content_bassdcsdcsdcsdcsdcsdcsdcsdcsdcsdcsdcsdcsdced_filter',response.data);
+            localStorage.setItem('filter_data', response.data.content_based_filter);
+            navigate('/home'); // Redirect to questionnaire
+            console.log('Survey answers submitted:', response);
+        } catch (error) {
+            console.error('Error submitting survey:', error);
+        }
     };
-
+            
+    
+    
+    
     return (
         <div className="min-h-screen bg-white p-6">
             <div className="max-w-2xl mx-auto bg-white rounded-lg shadow p-8">
@@ -27,7 +43,7 @@ const SurveyQuestions = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Age Group */}
-                    <div>
+                    {/* <div>
                         <label className="block text-lg mb-2">How old are you?</label>
                         <select
                             className="w-full p-2 border rounded bg-gray-100"
@@ -42,22 +58,22 @@ const SurveyQuestions = () => {
                             <option value="36-50">36 - 50</option>
                             <option value="over50">Over 50</option>
                         </select>
-                    </div>
+                    </div> */}
 
                     {/* Meat Consumed */}
                     <div>
                         <label className="block text-lg mb-2">Which meat do you consume?</label>
-                        <div className="space-y-2">
-                            {['Beef', 'Fish', 'Chicken', 'Pork', 'Lamb', 'None'].map((option) => (
-                                <label key={option} className="flex items-center gap-2">
+                        <div className="col-md-4">
+                            {['Beef', 'Goose ', 'Chicken', 'Pork', 'Veal', 'Fish', 'Salmon', 'Tuna', 'None'].map((option) => (
+                                <label key={option} className="row-md-3">
                                     <input
                                         type="checkbox"
-                                        checked={answers.meatConsumed.includes(option)}
+                                        checked={answers.preferred_meat.includes(option)}
                                         onChange={(e) => {
                                             const updatedSelection = e.target.checked
-                                                ? [...answers.meatConsumed, option]
-                                                : answers.meatConsumed.filter(item => item !== option);
-                                            setAnswers({ ...answers, meatConsumed: updatedSelection });
+                                                ? [...answers.preferred_meat, option]
+                                                : answers.preferred_meat.filter(item => item !== option);
+                                            setAnswers({ ...answers, preferred_meat: updatedSelection });
                                         }}
                                         className="form-checkbox"
                                     />
@@ -71,16 +87,16 @@ const SurveyQuestions = () => {
                     <div>
                         <label className="block text-lg mb-2">Do you follow any dietary restrictions?</label>
                         <div className="space-y-2">
-                            {['Vegan', 'Vegetarian', 'Gluten free', 'None'].map((option) => (
+                            {['Meat', 'Vegetarian'].map((option) => (
                                 <label key={option} className="flex items-center gap-2">
                                     <input
                                         type="checkbox"
-                                        checked={answers.dietaryRestrictions.includes(option)}
+                                        checked={answers.vegetarian_meat.includes(option)}
                                         onChange={(e) => {
                                             const updatedSelection = e.target.checked
-                                                ? [...answers.dietaryRestrictions, option]
-                                                : answers.dietaryRestrictions.filter(item => item !== option);
-                                            setAnswers({ ...answers, dietaryRestrictions: updatedSelection });
+                                                ? [...answers.vegetarian_meat, option]
+                                                : answers.vegetarian_meat.filter(item => item !== option);
+                                            setAnswers({ ...answers, vegetarian_meat: updatedSelection });
                                         }}
                                         className="form-checkbox"
                                     />
@@ -94,16 +110,16 @@ const SurveyQuestions = () => {
                     <div>
                         <label className="block text-lg mb-2">Do you have any food allergies?</label>
                         <div className="space-y-2">
-                            {['Peanut', 'Dairy', 'Shellfish', 'Treenuts', 'None'].map((option) => (
+                            {['Seafood', 'Gluten', 'Dairy', 'None'].map((option) => (
                                 <label key={option} className="flex items-center gap-2">
                                     <input
                                         type="checkbox"
-                                        checked={answers.foodAllergies.includes(option)}
+                                        checked={answers.allergies.includes(option)}
                                         onChange={(e) => {
                                             const updatedSelection = e.target.checked
-                                                ? [...answers.foodAllergies, option]
-                                                : answers.foodAllergies.filter(item => item !== option);
-                                            setAnswers({ ...answers, foodAllergies: updatedSelection });
+                                                ? [...answers.allergies, option]
+                                                : answers.allergies.filter(item => item !== option);
+                                            setAnswers({ ...answers, allergies: updatedSelection });
                                         }}
                                         className="form-checkbox"
                                     />
@@ -122,9 +138,9 @@ const SurveyQuestions = () => {
                                     key={option}
                                     type="button"
                                     className={`px-6 py-2 rounded ${
-                                        answers.sweetTooth === option ? 'bg-blue-500 text-white' : 'bg-gray-200'
+                                        answers.sweet_tooth === option ? 'bg-blue-500 text-white' : 'bg-gray-200'
                                     }`}
-                                    onClick={() => setAnswers({ ...answers, sweetTooth: option })}
+                                    onClick={() => setAnswers({ ...answers, sweet_tooth: option })}
                                 >
                                     {option}
                                 </button>
@@ -141,9 +157,9 @@ const SurveyQuestions = () => {
                                     key={option}
                                     type="button"
                                     className={`flex-1 py-2 rounded ${
-                                        answers.spiceLevel === option ? 'bg-blue-500 text-white' : 'bg-gray-200'
+                                        answers.spice_level === option ? 'bg-blue-500 text-white' : 'bg-gray-200'
                                     }`}
-                                    onClick={() => setAnswers({ ...answers, spiceLevel: option })}
+                                    onClick={() => setAnswers({ ...answers, spice_level: option })}
                                 >
                                     {option}
                                 </button>
@@ -152,7 +168,7 @@ const SurveyQuestions = () => {
                     </div>
 
                     {/* Favorite Drink */}
-                    <div>
+                    {/* <div>
                         <label className="block text-lg mb-2">Which of the following drinks do you consume the most?</label>
                         <select
                             className="w-full p-2 border rounded bg-gray-100"
@@ -166,7 +182,7 @@ const SurveyQuestions = () => {
                             <option value="Juice/milkshakes">Juice/milkshakes</option>
                             <option value="Soft drinks">Soft drinks</option>
                         </select>
-                    </div>
+                    </div> */}
 
                     {/* Health vs. Indulgence */}
                     <div>
@@ -175,13 +191,13 @@ const SurveyQuestions = () => {
                         </label>
                         <select
                             className="w-full p-2 border rounded bg-gray-100"
-                            value={answers.healthIndulgence}
-                            onChange={(e) => setAnswers({ ...answers, healthIndulgence: e.target.value })}
+                            value={answers.healthy_or_calorie_heavy}
+                            onChange={(e) => setAnswers({ ...answers, healthy_or_calorie_heavy: e.target.value })}
                             required
                         >
                             <option value="">Choose an option</option>
-                            <option value="Healthier options">Healthier options</option>
-                            <option value="Indulgent meals">Indulgent meals</option>
+                            <option value="healthy">Healthy Food</option>
+                            <option value="heavy">Indulgent meals(Calorie Heavy)</option>
                         </select>
                     </div>
 

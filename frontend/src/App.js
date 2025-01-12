@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import { menuConfig } from "./components/menuConfig";
 import Login from './components/login';
 import UserQuestionnaire from './components/UserQuestionnaire';
+import HomePage from './components/home';
 import './App.css';
 
 const styles = {
@@ -405,10 +406,21 @@ const App = () => {
                 />
 
                 <Route
-                    path="/"
+                    path="/plate"
                     element={
                         isAuthenticated ? (
                             <MainContent />
+                        ) : (
+                            <Navigate to="/login" replace />
+                        )
+                    }
+                />
+
+                <Route
+                    path="/home"
+                    element={
+                        isAuthenticated ? (
+                            <HomePage />
                         ) : (
                             <Navigate to="/login" replace />
                         )

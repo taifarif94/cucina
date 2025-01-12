@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+// import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
@@ -30,7 +31,6 @@ const Login = ({ onLoginSuccess }) => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isSigningUp, setIsSigningUp] = useState(false);
     const navigate = useNavigate();
-
     const nextSlide = () => {
         setCurrentSlide((prev) => (prev === foodItems.length - 1 ? 0 : prev + 1));
     };
@@ -42,20 +42,23 @@ const Login = ({ onLoginSuccess }) => {
     const handleLogin = async (e) => {
         e.preventDefault();
         if (username === 'admin' && password === 'password') {
+            console.log('dfijdifjnvidjfnvidfnvidjfvnidjfnidjfvndifjvndijfv');
             onLoginSuccess();
-            navigate('/');
+            navigate('/home');
             return;
         }
 
         try {
-            const response = await axios.post('http://localhost:5000/api/login', {
+            const response = await axios.post('http://localhost:5000/api/login/login', {
                 username,
                 password
             });
-            
-            if (response.data.success) {
-                onLoginSuccess();
-                navigate('/');
+            if (response.data.message) {
+                // console.log('kirtan J',response.data.collaborative_filter);
+                localStorage.setItem('user_id', response.data.user_id);
+                localStorage.setItem('filter_data', response.data.collaborative_filter);
+                onLoginSuccess(); // Set authenticated state
+                navigate('/home'); // Redirect to questionnaire
             } else {
                 setError('Invalid credentials');
             }
@@ -75,19 +78,21 @@ const Login = ({ onLoginSuccess }) => {
         }
 
         // For development, allow direct signup without API
-        if (username && password) {
-            onLoginSuccess(); // Set authenticated state
-            navigate('/questionnaire'); // Redirect to questionnaire
-            return;
-        }
+        // if (username && password) {
+        //     onLoginSuccess(); // Set authenticated state
+        //     navigate('/questionnaire'); // Redirect to questionnaire
+        //     return;
+        // }
 
         try {
             const response = await axios.post('http://localhost:5000/api/login/create-account', {
                 username,
                 password
             });
-
-            if (response.data.success) {
+            console.log(response);
+            if (response.data.message) {
+                // console.log('kirtan J Limbahciya');
+                localStorage.setItem('user_id', response.data.user_id);
                 onLoginSuccess(); // Set authenticated state
                 navigate('/questionnaire'); // Redirect to questionnaire
             } else {
@@ -98,18 +103,18 @@ const Login = ({ onLoginSuccess }) => {
             console.error('Signup error:', error);
         }
     };
-
     const handleGoogleLoginSuccess = async (response) => {
         try {
-            if (response.credential) {
-                onLoginSuccess();
-                navigate('/questionnaire');
-            } else {
-                setError('Google login failed');
-            }
+            const serverResponse = await axios.post('http://localhost:5000/api/login/google-login', {
+                token: response.credential // Ensure you're sending the token correctly here
+            });
+            // console.log('kirtan J Limbahciya',serverResponse.data.token);
+            localStorage.setItem('user_id', response.data.user_id);
+            onLoginSuccess(); // Set authenticated state
+            navigate('/home'); // Redirect to questionnaire
         } catch (error) {
-            setError('Failed to login with Google');
             console.error('Google login error:', error);
+            setError('Failed to login with Google');
         }
     };
 

@@ -5,7 +5,7 @@ const db = require('./db');
 
 router.post('/', (req, res) => {
     const { name, is_customizable, price_modifier } = req.body;
-    console.log(name);
+    // console.log(name);
     if (!name) {
         return res.status(400).json({ error: 'Name is required' });
     }
