@@ -44,9 +44,9 @@ const SurveyQuestions = () => {
         console.log('content_based_filter:', response.data);
 
         if (response.data) {
-            localStorage.setItem('filter_data', JSON.stringify(response.data.content_based_filter));
+            localStorage.setItem('filter_data', response.data.content_based_filter);
             alert("Survey submitted successfully!");
-            window.location.href = 'http://localhost:3000/home'; // Direct page redirect
+            navigate('/home');// Direct page redirect
         }
     } catch (error) {
         alert("Error submitting survey: " + error.message);
