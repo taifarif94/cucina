@@ -69,7 +69,7 @@ const HomePage = () => {
                 imageAlt={dish.name}
                 content={`Category: ${dish.food_category}, Allergens: ${dish.allergens || "None"}`}
                 dish_id={dish.dish_id}
-                onCardClick={handleCardClick} // Ensure this is passed to Card component
+                onCardClick={()=>handleCardClick(dish.dish_id)} // Ensure this is passed to Card component
               />
             </div>
           ))
@@ -90,8 +90,9 @@ const HomePage = () => {
                 imageAlt={dish.name}
                 content={`Category: ${dish.food_category}, Allergens: ${dish.allergens || "None"}`}
                 dish_id={dish.dish_id}
-                onCardClick={handleCardClick} // Ensure this is passed to Card component
+                onCardClick={()=>handleCardClick(dish.dish_id)} // Ensure this is passed to Card component
               />
+              {/* <h1>{dish.dish_id}dcsdcsdcsdcsdcsdcsdc</h1> */}
             </div>
           ))
         ) : (

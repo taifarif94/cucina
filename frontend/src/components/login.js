@@ -42,7 +42,6 @@ const Login = ({ onLoginSuccess }) => {
     const handleLogin = async (e) => {
         e.preventDefault();
         if (username === 'admin' && password === 'password') {
-            console.log('dfijdifjnvidjfnvidfnvidjfvnidjfnidjfvndifjvndijfv');
             onLoginSuccess();
             navigate('/home');
             return;

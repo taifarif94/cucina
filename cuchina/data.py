@@ -75,8 +75,8 @@ def generate_recommendations(user_data, similarities, dish_data):
     filtered_dishes = filtered_dishes[
         (filtered_dishes['preferred_weather'].str.contains('all seasons') | 
          filtered_dishes['preferred_weather'].str.contains('winter')) & 
-        (filtered_dishes['availability'].str.contains('all days') | 
-         filtered_dishes['availability'].str.contains('mon'))
+        (filtered_dishes['available'].str.contains('all days') | 
+         filtered_dishes['available'].str.contains('mon'))
     ]
     if user_data['sweet_tooth'].iloc[0] == 'yes':
         # if user_data['allergies'].iloc[0] != 'none':
