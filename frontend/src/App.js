@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { menuConfig } from "./components/menuConfig";
 import Login from './components/login';
@@ -98,7 +98,11 @@ const styles = {
     }
 };
 
+
+
+
 const App = () => {
+    const [dishes, setDishes] = useState([]);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [selectedSquare, setSelectedSquare] = useState(null);
     const [components, setComponents] = useState([]);
@@ -110,6 +114,20 @@ const App = () => {
         method: null,
         temp: null,
     });
+
+    useEffect(() => {
+        const fetchDishes = async () => {
+            try {
+                const response = await fetch("http://localhost:5000/api/dish");
+                const data = await response.json();
+                setDishes(data);
+            } catch (error) {
+                console.error("Error fetching dishes:", error);
+            }
+        };
+
+        fetchDishes();
+    }, []);
 
     const isSquareOccupied = (index) => {
         return components.some(comp => {
@@ -197,6 +215,74 @@ const App = () => {
 
     const MainContent = () => (
         <div style={styles.container}>
+            {/* Menu List - Left Sidebar */}
+            <div style={{
+                width: '300px',
+                backgroundColor: 'white',
+                padding: '1rem',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                height: 'fit-content',
+                overflowY: 'auto'
+            }}>
+                <h2 style={styles.heading}>Menu</h2>
+
+                {/* Appetizers Section */}
+                <div className="mb-6">
+                    <h3 className="text-xl font-semibold mb-3 pb-2 border-b border-gray-200">
+                        Appetizers
+                    </h3>
+                    <ul className="space-y-2">
+                        {dishes.filter(dish => dish.food_category === "Appetizers").map(dish => (
+                            <li key={dish.dish_id} className="p-2 hover:bg-gray-50 rounded">
+                                <div className="font-medium">{dish.name}</div>
+                                <div className="text-sm text-gray-600">
+                                    {dish.allergens ? `Allergens: ${dish.allergens}` : 'No Allergens'}
+                                </div>
+                                <div className="text-sm text-gray-800">${dish.price}</div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* Main Courses Section */}
+                <div className="mb-6">
+                    <h3 className="text-xl font-semibold mb-3 pb-2 border-b border-gray-200">
+                        Main Courses
+                    </h3>
+                    <ul className="space-y-2">
+                        {dishes.filter(dish => dish.food_category === "Main Courses").map(dish => (
+                            <li key={dish.dish_id} className="p-2 hover:bg-gray-50 rounded">
+                                <div className="font-medium">{dish.name}</div>
+                                <div className="text-sm text-gray-600">
+                                    {dish.allergens ? `Allergens: ${dish.allergens}` : 'No Allergens'}
+                                </div>
+                                <div className="text-sm text-gray-800">${dish.price}</div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* Desserts Section */}
+                <div className="mb-6">
+                    <h3 className="text-xl font-semibold mb-3 pb-2 border-b border-gray-200">
+                        Desserts
+                    </h3>
+                    <ul className="space-y-2">
+                        {dishes.filter(dish => dish.food_category === "Desserts").map(dish => (
+                            <li key={dish.dish_id} className="p-2 hover:bg-gray-50 rounded">
+                                <div className="font-medium">{dish.name}</div>
+                                <div className="text-sm text-gray-600">
+                                    {dish.allergens ? `Allergens: ${dish.allergens}` : 'No Allergens'}
+                                </div>
+                                <div className="text-sm text-gray-800">${dish.price}</div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+
+            {/* Plate Content - Middle */}
             <div style={styles.mainContent}>
                 <h1 style={styles.heading}>Make your plate!</h1>
                 <div style={styles.plateContainer}>
@@ -358,6 +444,7 @@ const App = () => {
                 )}
             </div>
 
+            {/* Selected Components - Right Sidebar */}
             <div style={styles.sidebar}>
                 <h2 style={styles.heading}>Selected Components</h2>
                 {components.map((comp, idx) => (
@@ -385,6 +472,11 @@ const App = () => {
     return (
         <Router>
             <Routes>
+                <Route 
+                    path="/"
+                    element={<Navigate to="/login" replace />}
+                />
+                
                 <Route
                     path="/login"
                     element={
