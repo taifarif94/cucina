@@ -42,21 +42,45 @@ router.get('/', (req, res) => {
 
 router.post('/', (req, res) => {
     const { dishId } = req.body; // Get the dishId from the request body
-    const query = 'SELECT * FROM dishes WHERE dish_id = ?'; // Correct query syntax
+    const query = `
+    SELECT d.*, fc.*
+    FROM dishes d
+    LEFT JOIN food_combination fc ON d.dish_id = fc.dish_id
+    WHERE d.dish_id = ?;
+    `;
+
     db.query(query, [dishId], (err, results) => {
-      if (err) {
-        console.error('Error fetching dishes:', err);
-        return res.status(500).json({ error: 'Failed to fetch dishes' });
-      }
-  
-      if (results.length === 0) {
-        return res.status(404).json({ message: 'Dish not found' }); // Handle case if no dish is found
-      }
-  
-    //   console.log('Dish found:', results[0]); // Log the found dish
-      res.status(200).json(results[0]); // Send the first result (assuming dish_id is unique)
+        if (err) {
+            console.error('Error fetching dishes:', err);
+            return res.status(500).json({ error: 'Failed to fetch dishes' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'Dish not found' }); // Handle case if no dish is found
+        }
+
+        const get_beverage = `SELECT * FROM beverages WHERE beverage_id = ?;`;
+
+        // Nested query for beverages
+        db.query(get_beverage, [dishId], (err, beverage) => {
+            if (err) {
+                console.error('Error fetching beverages:', err);
+                return res.status(500).json({ error: 'Failed to fetch beverages' });
+            }
+
+            // Add beverages to the results
+            const dishWithBeverages = {
+                ...results[0], // Assuming dish_id is unique
+                recommended_beverage: beverage,
+            };
+
+            // Send the response only once, after both queries are resolved
+            console.log('Dish found:', dishWithBeverages);
+            res.status(200).json(dishWithBeverages);
+        });
     });
-  });
+});
+
 
 router.put('/:id', (req, res) => {
     const { id } = req.params;

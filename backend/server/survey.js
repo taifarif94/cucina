@@ -7,10 +7,6 @@ const fs = require('fs');
 const path = require('path');
 const tempInputDataPath = path.join(__dirname, 'inputData.json');
 const tempDishDataPath = path.join(__dirname, 'dishData.json');
-const nodecallspython = require("node-calls-python");
-const py = nodecallspython.interpreter;
-const jwt = require('jsonwebtoken');
-const secretKey = 'your-secret-key';
 
 router.post('/post_answers', (req, res) => {
     const user_id = req.body.user_id;
@@ -25,7 +21,7 @@ router.post('/post_answers', (req, res) => {
         allergies,
         sweet_tooth,
         spice_level,
-        favoriteDrink,
+        // favoriteDrink,
         healthy_or_calorie_heavy,
     } = req.body.answers;
 
@@ -36,7 +32,7 @@ router.post('/post_answers', (req, res) => {
         return res.status(400).json({ error: 'All fields are required.' });
     }
 
-    // console.log(req.body.answers);
+    console.log(req.body.answers);
 
     const query = `
         INSERT INTO survey (
