@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -12,60 +12,63 @@ const SurveyQuestions = () => {
         allergies: [],
         sweet_tooth: '',
         spice_level: '',
-        // favoriteDrink: '',
         healthy_or_calorie_heavy: '',
     });
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            console.log(user_id);
-            const response = await axios.post(
-                'http://localhost:5000/api/survey/post_answers',
-                { answers, user_id},
-            );
-            console.log('content_bassdcsdcsdcsdcsdcsdcsdcsdcsdcsdcsdcsdcsdced_filter',response.data);
-            localStorage.setItem('filter_data', response.data.content_based_filter);
-            navigate('/home'); // Redirect to questionnaire
-            console.log('Survey answers submitted:', response);
-        } catch (error) {
-            console.error('Error submitting survey:', error);
+	useEffect(() => {
+    if (!user_id) {
+        alert("Please log in first");
+        navigate('/login');
+    }
+    console.log("Current user_id:", user_id);
+}, []);
+    
+	const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+        // Log the data being sent
+        console.log("Sending data:", { answers, user_id });
+        
+        if (!user_id) {
+            alert("No user ID found! Please log in again.");
+            navigate('/login');
+            return;
         }
-    };
-            
-    
-    
-    
+
+        const response = await axios.post(
+            'http://localhost:5000/api/survey/post_answers',
+            { answers, user_id },
+        );
+
+        // Log the response
+        console.log('Full response:', response);
+        console.log('content_based_filter:', response.data);
+
+        if (response.data) {
+            localStorage.setItem('filter_data', response.data.content_based_filter);
+            alert("Survey submitted successfully!");
+            navigate('/home');// Direct page redirect
+        }
+    } catch (error) {
+        alert("Error submitting survey: " + error.message);
+        console.error('Error details:', error);
+    }
+};
+
     return (
         <div className="min-h-screen bg-white p-6">
             <div className="max-w-2xl mx-auto bg-white rounded-lg shadow p-8">
                 <h1 className="text-3xl font-semibold mb-6 text-center">Survey Questions</h1>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Age Group */}
-                    {/* <div>
-                        <label className="block text-lg mb-2">How old are you?</label>
-                        <select
-                            className="w-full p-2 border rounded bg-gray-100"
-                            value={answers.ageGroup}
-                            onChange={(e) => setAnswers({ ...answers, ageGroup: e.target.value })}
-                            required
-                        >
-                            <option value="">Select your age group</option>
-                            <option value="under18">Under 18</option>
-                            <option value="18-25">18 - 25</option>
-                            <option value="26-35">26 - 35</option>
-                            <option value="36-50">36 - 50</option>
-                            <option value="over50">Over 50</option>
-                        </select>
-                    </div> */}
-
-                    {/* Meat Consumed */}
-                    <div>
-                        <label className="block text-lg mb-2">Which meat do you consume?</label>
-                        <div className="col-md-4">
-                            {['Beef', 'Goose ', 'Chicken', 'Pork', 'Veal', 'Fish', 'Salmon', 'Tuna', 'None'].map((option) => (
-                                <label key={option} className="row-md-3">
+                    {/* Meat Consumed - Newly Formatted */}
+                    <div className="mb-6">
+                        <label className="block text-lg font-semibold mb-4">Which meat do you consume?</label>
+                        <div className="grid grid-cols-3 gap-4">
+                            {['Beef', 'Goose', 'Chicken', 'Pork', 'Veal', 'Fish', 'Salmon', 'Tuna', 'None'].map((option) => (
+                                <label 
+                                    key={option} 
+                                    className="flex items-center p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                                >
                                     <input
                                         type="checkbox"
                                         checked={answers.preferred_meat.includes(option)}
@@ -75,9 +78,9 @@ const SurveyQuestions = () => {
                                                 : answers.preferred_meat.filter(item => item !== option);
                                             setAnswers({ ...answers, preferred_meat: updatedSelection });
                                         }}
-                                        className="form-checkbox"
+                                        className="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                                     />
-                                    <span>{option}</span>
+                                    <span className="ml-3 text-gray-700">{option}</span>
                                 </label>
                             ))}
                         </div>
@@ -166,23 +169,6 @@ const SurveyQuestions = () => {
                             ))}
                         </div>
                     </div>
-
-                    {/* Favorite Drink */}
-                    {/* <div>
-                        <label className="block text-lg mb-2">Which of the following drinks do you consume the most?</label>
-                        <select
-                            className="w-full p-2 border rounded bg-gray-100"
-                            value={answers.favoriteDrink}
-                            onChange={(e) => setAnswers({ ...answers, favoriteDrink: e.target.value })}
-                            required
-                        >
-                            <option value="">Select a drink</option>
-                            <option value="Water">Water</option>
-                            <option value="Alcohol">Alcohol</option>
-                            <option value="Juice/milkshakes">Juice/milkshakes</option>
-                            <option value="Soft drinks">Soft drinks</option>
-                        </select>
-                    </div> */}
 
                     {/* Health vs. Indulgence */}
                     <div>
