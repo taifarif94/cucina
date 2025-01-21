@@ -11,60 +11,92 @@ router.post('/', (req, res) => {
 
     let total_price = 0.0;
     const dishIds = dishes.map(dish => dish.dish_id);
+    const beverageIds = dishes.map(dish => dish.beverages).filter(Boolean); // Only valid beverage IDs
 
-    const dishQuery = `SELECT dish_id, base_price FROM dishes WHERE dish_id IN (?)`;
+    const dishQuery = `SELECT * FROM dishes WHERE dish_id IN (?)`;
+    const beverageQuery = `SELECT beverage_id, price FROM beverages WHERE beverage_id IN (?)`;
+
+    // Fetch dishes and beverages prices in parallel
     db.query(dishQuery, [dishIds], (err, dishResults) => {
         if (err) {
             console.error('Error fetching dishes:', err);
             return res.status(500).json({ error: 'Failed to calculate total price' });
         }
 
-        const dishMap = dishResults.reduce((map, dish) => {
-            map[dish.dish_id] = dish.base_price;
-            return map;
-        }, {});
-
-        dishes.forEach(dish => {
-            if (dishMap[dish.dish_id]) {
-                total_price += parseFloat(dishMap[dish.dish_id]);
-            }
-        });
-
-        const orderQuery = `INSERT INTO orders (user_id, total_price, order_status) VALUES (?, ?, ?)`;
-        db.query(orderQuery, [user_id, total_price, 'pending'], (err, orderResult) => {
+        db.query(beverageQuery, [beverageIds], (err, beverageResults) => {
             if (err) {
-                console.error('Error creating order:', err);
-                return res.status(500).json({ error: 'Failed to create order' });
+                console.error('Error fetching beverages:', err);
+                return res.status(500).json({ error: 'Failed to calculate total price' });
             }
 
-            const orderId = orderResult.insertId;
-            const customizations = dishes.flatMap(dish =>
-                (dish.customizations || []).map(customization => [
-                    orderId,
-                    dish.dish_id,
-                    customization.ingredient_id,
-                    customization.action
-                ])
-            );
+            const dishMap = dishResults.reduce((map, dish) => {
+                map[dish.dish_id] = dish.price;
+                return map;
+            }, {});
 
-            if (customizations.length > 0) {
-                const customizationQuery = `
-                    INSERT INTO customizations (order_id, dish_id, ingredient_id, action)
+            const beverageMap = beverageResults.reduce((map, beverage) => {
+                map[beverage.beverage_id] = beverage.price;
+                return map;
+            }, {});
+
+            // Insert order into orders table
+            const orderQuery = `INSERT INTO orders (user_id, total_price, order_status) VALUES (?, ?, ?)`;
+
+            db.query(orderQuery, [user_id, total_price, 'pending'], (err, orderResult) => {
+                if (err) {
+                    console.error('Error creating order:', err);
+                    return res.status(500).json({ error: 'Failed to create order' });
+                }
+
+                const orderId = orderResult.insertId;
+
+                // Process each dish and insert into order_items table
+                const orderItems = dishes.map(dish => {
+                    const dishPrice = dishMap[dish.dish_id] || 0;
+                    const beveragePrice = beverageMap[dish.beverages] || 0;
+                    const itemPrice = dishPrice + beveragePrice;
+                    total_price += itemPrice;
+
+                    return [
+                        orderId,
+                        dish.dish_id,
+                        dish.beverages || null,
+                        // dish.add_ons.join(', '), // Convert add_ons array to string
+                        // dish.quantity,
+                        itemPrice
+                    ];
+                });
+
+                const orderItemsQuery = `
+                    INSERT INTO order_items (order_id, dish_id, beverage_id, price)
                     VALUES ?
                 `;
-                db.query(customizationQuery, [customizations], (err) => {
+                console.log(orderItems);
+                db.query(orderItemsQuery, [orderItems], (err) => {
                     if (err) {
-                        console.error('Error adding customizations:', err);
-                        return res.status(500).json({ error: 'Failed to add customizations' });
+                        console.error('Error inserting order items:', err);
+                        return res.status(500).json({ error: 'Failed to add order items' });
                     }
-                    res.status(201).json({ message: 'Order placed successfully', order_id: orderId });
+
+                    // Update the total price in the orders table
+                    const updateOrderQuery = `UPDATE orders SET total_price = ? WHERE order_id = ?`;
+                    db.query(updateOrderQuery, [total_price, orderId], (err) => {
+                        if (err) {
+                            console.error('Error updating total price:', err);
+                            return res.status(500).json({ error: 'Failed to update order total price' });
+                        }
+
+                        res.status(201).json({
+                            message: 'Order placed successfully',
+                            order_id: orderId
+                        });
+                    });
                 });
-            } else {
-                res.status(201).json({ message: 'Order placed successfully', order_id: orderId });
-            }
+            });
         });
     });
 });
+
 
 router.get('/:id', (req, res) => {
     const { id } = req.params;

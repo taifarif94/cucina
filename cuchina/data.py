@@ -89,7 +89,7 @@ def generate_recommendations(user_data, similarities, dish_data):
     else:
         filtered_dishes = filtered_dishes[filtered_dishes['food_category'] != 'desserts']
 
-    filtered_dishes = filtered_dishes.sort_values(by=['similarity', 'overall_rating'], ascending=[False, False])
+    filtered_dishes = filtered_dishes.sort_values(by=['similarity', 'overall_rating'], ascending=[False, False])    
 
     recommendations = filtered_dishes.head(10).to_dict(orient='records')
 
