@@ -4,6 +4,7 @@ import Login from './components/login';
 import UserQuestionnaire from './components/UserQuestionnaire';
 import HomePage from './components/home';
 import PlateCustomization from './components/PlateCustomization';
+import OrderReview from './components/OrderReview';
 import './App.css';
 
 const App = () => {
@@ -68,6 +69,17 @@ const App = () => {
                     element={
                         isAuthenticated ? (
                             <HomePage />
+                        ) : (
+                            <Navigate to="/login" replace />
+                        )
+                    }
+                />
+				
+				<Route
+                    path="/review"
+                    element={
+                        isAuthenticated ? (
+                            <OrderReview  />
                         ) : (
                             <Navigate to="/login" replace />
                         )

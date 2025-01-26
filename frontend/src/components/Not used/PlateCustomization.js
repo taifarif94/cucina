@@ -4,6 +4,133 @@ import { menuConfig } from "./menuConfig";
 import { ShoppingCart, Trash2, Plus } from 'lucide-react';
 import axios from 'axios';
 
+
+
+// Utility functions for plate space management
+export const checkSpaceAvailability = (layers, currentLayer, selectedSquare, itemType, itemName) => {
+  const currentLayerData = layers[currentLayer];
+  const requiredSpaces = getRequiredSpaces(itemType, itemName);
+  
+  if (requiredSpaces === 4) {
+    // For items requiring 4 spaces, check if we have a valid 2x2 configuration
+    const isLeftSide = selectedSquare % 3 === 0;
+    const isRightSide = selectedSquare % 3 === 1;
+    
+    if (!isLeftSide && !isRightSide) {
+      return {
+        available: false,
+        message: "Large items must be placed starting from the left or middle columns"
+      };
+    }
+
+    const squaresToCheck = isLeftSide 
+      ? [selectedSquare, selectedSquare + 1, selectedSquare + 3, selectedSquare + 4]
+      : [selectedSquare, selectedSquare + 1, selectedSquare + 3, selectedSquare + 4];
+
+    // Check if any of these squares are occupied
+    const isOccupied = squaresToCheck.some(square => 
+      currentLayerData.components.some(comp => {
+        if (comp.spaces === 4) {
+          const occupiedSquares = comp.position === 0 
+            ? [0, 1, 3, 4] 
+            : [1, 2, 4, 5];
+          return occupiedSquares.includes(square);
+        }
+        return comp.position === square;
+      })
+    );
+
+    if (isOccupied) {
+      return {
+        available: false,
+        message: "Not enough contiguous space available. Please select another location or layer."
+      };
+    }
+
+    return { available: true };
+  }
+
+  // For single-space items
+  const isOccupied = currentLayerData.components.some(comp => {
+    if (comp.spaces === 4) {
+      const occupiedSquares = comp.position === 0 
+        ? [0, 1, 3, 4] 
+        : [1, 2, 4, 5];
+      return occupiedSquares.includes(selectedSquare);
+    }
+    return comp.position === selectedSquare;
+  });
+
+  return {
+    available: !isOccupied,
+    message: isOccupied ? "This space is already occupied." : null
+  };
+};
+
+export const getRequiredSpaces = (itemType, itemName) => {
+  if (itemType === "Protein" && menuConfig.spaceRequirements.Beef[itemName]) {
+    return menuConfig.spaceRequirements.Beef[itemName];
+  }
+  return menuConfig.spaceRequirements.default;
+};
+
+export const addComponentToLayer = (layers, currentLayer, component) => {
+  return layers.map(layer => {
+    if (layer.id === currentLayer) {
+      return {
+        ...layer,
+        components: [...layer.components, {
+          ...component,
+          spices: [],
+          condiments: []
+        }]
+      };
+    }
+    return layer;
+  });
+};
+
+export const addSpiceOrCondiment = (layers, currentLayer, componentIndex, type, item) => {
+  return layers.map(layer => {
+    if (layer.id === currentLayer) {
+      return {
+        ...layer,
+        components: layer.components.map((comp, idx) => {
+          if (idx === componentIndex) {
+            return {
+              ...comp,
+              [type]: [...(comp[type] || []), item]
+            };
+          }
+          return comp;
+        })
+      };
+    }
+    return layer;
+  });
+};
+
+const ErrorMessage = ({ message, onClose }) => {
+  if (!message) return null;
+
+  return (
+    <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg">
+      <div className="flex items-center">
+        <div className="py-1">
+          <p>{message}</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="ml-4 text-red-700 hover:text-red-900"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
 const styles = {
     container: {
         width: '100%',
@@ -166,13 +293,13 @@ const styles = {
 const PlateCustomization = ({ dishes = [] }) => {
     const location = useLocation();
     const navigate = useNavigate();
+	const [errorMessage, setErrorMessage] = useState(null);
     const [showPlateBuilder, setShowPlateBuilder] = useState(false);
     const [selectedDish, setSelectedDish] = useState(null);
     const [cart, setCart] = useState([]);
     const [selectedAddOns, setSelectedAddOns] = useState([]);
     const [selectedBeverage, setSelectedBeverage] = useState(null);
-	const recommended_data = localStorage.getItem("filter_data");
-	console.log("Recommended dishes:", recommended_data);
+
     // Plate Builder States
     const [selectedSquare, setSelectedSquare] = useState(null);
     const [currentStep, setCurrentStep] = useState("initial");
@@ -360,9 +487,22 @@ const PlateCustomization = ({ dishes = [] }) => {
     };
 
     const handleItemSelect = (item) => {
-        setSelectionState(prev => ({ ...prev, item }));
-        setCurrentStep("select-method");
-    };
+  const spaceCheck = checkSpaceAvailability(
+    layers, 
+    currentLayer, 
+    selectedSquare, 
+    selectionState.category,
+    item
+  );
+
+  if (!spaceCheck.available) {
+    setErrorMessage(spaceCheck.message);
+    return;
+  }
+
+  setSelectionState(prev => ({ ...prev, item }));
+  setCurrentStep("select-method");
+};
 
     const addComponent = (method, temp = null) => {
         const spaces =
@@ -416,14 +556,24 @@ const PlateCustomization = ({ dishes = [] }) => {
     };
 
     const handleMethodSelect = (method) => {
-        setSelectionState(prev => ({ ...prev, method }));
-        if (selectionState.category === "Protein" && 
-            selectionState.subcategory === "Beef") {
-            setCurrentStep("select-temp");
-        } else {
-            addComponent(method);
-        }
-    };
+  setSelectionState(prev => ({ ...prev, method }));
+  if (selectionState.category === "Protein" && 
+      selectionState.subcategory === "Beef") {
+    setCurrentStep("select-temp");
+  } else {
+    setCurrentStep("select-spices");
+  }
+};
+
+const handleSpiceSelect = (spices) => {
+  setSelectionState(prev => ({ ...prev, spices }));
+  setCurrentStep("select-condiments");
+};
+
+const handleCondimentSelect = (condiments) => {
+  setSelectionState(prev => ({ ...prev, condiments }));
+  addComponent(selectionState.method, selectionState.temp);
+};
 
     const handleTempSelect = (temp) => {
         addComponent(selectionState.method, temp);
@@ -827,6 +977,45 @@ const PlateCustomization = ({ dishes = [] }) => {
                                     </div>
                                 </div>
                             )}
+							
+							{currentStep === "select-spices" && (
+  <div>
+    <h3 className="text-lg font-semibold mb-3">Select Spices</h3>
+    <div className="grid grid-cols-2 gap-2">
+      {menuConfig.foodOptions.Spices.map((spice) => (
+        <button
+          key={spice}
+          onClick={() => handleSpiceSelect(spice)}
+          className="p-2 bg-white border rounded hover:bg-gray-50"
+        >
+          {spice}
+        </button>
+      ))}
+    </div>
+  </div>
+)}
+
+{currentStep === "select-condiments" && (
+  <div>
+    <h3 className="text-lg font-semibold mb-3">Select Condiments</h3>
+    <div className="grid grid-cols-2 gap-2">
+      {Object.entries(menuConfig.foodOptions.Condiments).map(([category, items]) => (
+        <div key={category}>
+          <h4 className="font-medium mb-2">{category}</h4>
+          {items.map((condiment) => (
+            <button
+              key={condiment}
+              onClick={() => handleCondimentSelect(condiment)}
+              className="p-2 bg-white border rounded hover:bg-gray-50 w-full mb-2"
+            >
+              {condiment}
+            </button>
+          ))}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
                         </div>
 
                         {/* Layer Components Display */}

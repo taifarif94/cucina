@@ -171,8 +171,7 @@ const PlateCustomization = ({ dishes = [] }) => {
     const [cart, setCart] = useState([]);
     const [selectedAddOns, setSelectedAddOns] = useState([]);
     const [selectedBeverage, setSelectedBeverage] = useState(null);
-	const recommended_data = localStorage.getItem("filter_data");
-	console.log("Recommended dishes:", recommended_data);
+
     // Plate Builder States
     const [selectedSquare, setSelectedSquare] = useState(null);
     const [currentStep, setCurrentStep] = useState("initial");
