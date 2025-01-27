@@ -72,6 +72,7 @@ const OrderReview = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [reviews, setReviews] = useState({});
+  const [textReviews, setTextReviews] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const cart = location.state?.cart || [];
 
@@ -79,6 +80,13 @@ const OrderReview = () => {
     setReviews(prev => ({
       ...prev,
       [itemId]: rating
+    }));
+  };
+
+  const handleTextReviewChange = (itemId, text) => {
+    setTextReviews(prev => ({
+      ...prev,
+      [itemId]: text
     }));
   };
 
@@ -96,15 +104,19 @@ const OrderReview = () => {
 
     try {
       // Here you would typically send the reviews to your backend
-      console.log('Submitting reviews:', reviews);
+      console.log('Submitting reviews:', {
+        ratings: reviews,
+        textReviews: textReviews
+      });
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+	  alert('Review submitted successfully');
       // Navigate to confirmation page or home
-      navigate('/review-confirmation', { 
+      navigate('/login', { 
         state: { 
-          reviews,
+          ratings: reviews,
+          textReviews: textReviews,
           totalItems: cart.length 
         }
       });
@@ -160,17 +172,33 @@ const OrderReview = () => {
               </p>
             </div>
             
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-700">
-                Your Rating:
-              </span>
-              <StarRating 
-                rating={reviews[item.id] || 0}
-                setRating={(rating) => handleRatingChange(item.id, rating)}
-              />
-              <span className="text-sm text-gray-500">
-                {reviews[item.id] ? reviews[item.id].toFixed(1) : '0.0'} / 5.0
-              </span>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium text-gray-700">
+                  Your Rating:
+                </span>
+                <StarRating 
+                  rating={reviews[item.id] || 0}
+                  setRating={(rating) => handleRatingChange(item.id, rating)}
+                />
+                <span className="text-sm text-gray-500">
+                  {reviews[item.id] ? reviews[item.id].toFixed(1) : '0.0'} / 5.0
+                </span>
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                <label htmlFor={`review-${item.id}`} className="text-sm font-medium text-gray-700">
+                  Your Review:
+                </label>
+                <textarea
+                  id={`review-${item.id}`}
+                  rows="3"
+                  value={textReviews[item.id] || ''}
+                  onChange={(e) => handleTextReviewChange(item.id, e.target.value)}
+                  placeholder="Share your thoughts about this item..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
             </div>
           </div>
         ))}

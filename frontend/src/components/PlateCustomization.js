@@ -164,6 +164,7 @@ const styles = {
 };
 
 const PlateCustomization = ({ dishes = [] }) => {
+	const [showInstructions, setShowInstructions] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
     const [showPlateBuilder, setShowPlateBuilder] = useState(false);
@@ -440,6 +441,14 @@ const PlateCustomization = ({ dishes = [] }) => {
                 >
                     {showPlateBuilder ? 'Back to Menu' : 'Build Custom Plate'}
                 </button>
+				
+				<button
+					style={styles.buttonPrimary}
+					onClick={() => setShowInstructions(true)}
+					className="w-full mb-4"
+				>
+					How to Build Your Plate
+				</button>
 
                 {!showPlateBuilder && (
                     <div>
@@ -1028,6 +1037,54 @@ const PlateCustomization = ({ dishes = [] }) => {
                     </div>
                 </div>
             </div>
+			{showInstructions && (
+    <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000
+    }}>
+        <div style={{
+            background: 'white',
+            borderRadius: '8px',
+            padding: '1.5rem',
+            maxWidth: '600px',
+            textAlign: 'center'
+        }}>
+            <h2 style={{ marginBottom: '1rem' }}>Welcome to the Build Your Plate feature!</h2>
+            <p style={{ whiteSpace: 'pre-wrap', marginBottom: '1rem' }}>
+				<p>- A plate consists of layers, and each layer can have multiple components.</p>
+				<p>- Start by selecting the Add Componenet button.</p>
+				<p>- Then select an empty square on the plate grid.</p>
+				<p>- Choose a category (e.g., Protein, Vegetables, etc.).</p>
+				<p>- Select an item and the desired cooking method.</p>
+				<p>- Add additional layers as needed to place ingredents on top of the components already placed on the plate.</p>
+				<p>- You can select a previous layer to make changes.</p>
+				<p>- You can view a summary of your selections and finalize your custom plate!</p>
+            </p>
+            <button
+                style={{
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                    padding: '0.75rem 1.5rem',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                }}
+                onClick={() => setShowInstructions(false)}
+            >
+                Close
+            </button>
+        </div>
+    </div>
+)}
+
         </div>
     );
 };
