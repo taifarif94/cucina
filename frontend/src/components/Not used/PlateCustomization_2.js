@@ -376,90 +376,70 @@ const calculateDishPrice = () => {
     };
 
     const handleItemSelect = (item) => {
-    setSelectionState(prev => ({ ...prev, item }));
-    if (selectionState.category === "Condiments") {
-        // For condiments, directly add the component without method selection
-        addComponent(null);  // Pass null for method since condiments don't need cooking methods
-    } else {
+        setSelectionState(prev => ({ ...prev, item }));
         setCurrentStep("select-method");
-    }
-};
-
-    const addComponent = (method, temp = null) => {
-    const spaces = 
-        selectionState.category === "Protein" &&
-        selectionState.subcategory === "Beef"
-            ? 4
-            : 1;
-
-    // Create the component object with all necessary fields
-    const newComponent = {
-        position: selectedSquare,
-        spaces: spaces,
-        category: selectionState.category,
-        subcategory: selectionState.subcategory,
-        item: selectionState.item, // This should contain the actual condiment name
-        // Only include method and temp for non-condiments
-        ...(selectionState.category !== "Condiments" && {
-            method: method,
-            temp: temp
-        })
     };
 
-    const updatedLayers = layers.map(layer => {
-        if (layer.id === currentLayer) {
-            return {
-                ...layer,
-                components: [...layer.components, newComponent]
-            };
-        }
-        return layer;
-    });
+    const addComponent = (method, temp = null) => {
+        const spaces =
+            selectionState.category === "Protein" &&
+            selectionState.subcategory === "Beef"
+                ? 4
+                : 1;
 
-    setLayers(updatedLayers);
-    resetSelections();
-};
+        const newComponent = {
+            position: selectedSquare,
+            spaces: spaces,
+            category: selectionState.category,
+            subcategory: selectionState.subcategory,
+            item: selectionState.item,
+            method: method,
+            temp: temp,
+        };
+
+        const updatedLayers = layers.map(layer => {
+            if (layer.id === currentLayer) {
+                return {
+                    ...layer,
+                    components: [...layer.components, newComponent]
+                };
+            }
+            return layer;
+        });
+
+        setLayers(updatedLayers);
+        resetSelections();
+    };
 
     const handleCategorySelect = (category) => {
-    setSelectionState(prev => ({ ...prev, category }));
-    // Clear previous subcategory and item when selecting a new category
-    setSelectionState(prev => ({ ...prev, subcategory: null, item: null }));
-    
-    // Check if the category has subcategories (is an object with nested structure)
-    const categoryData = menuConfig.foodOptions[category];
-    if (typeof categoryData === 'object' && 
-        !Array.isArray(categoryData) && 
-        categoryData !== null) {
-        setCurrentStep("select-subcategory");
-    } else if (Array.isArray(categoryData) && categoryData.length > 0) {
-        setCurrentStep("select-item");
-    }
-};
+        setSelectionState(prev => ({ ...prev, category }));
+        if (category === "Protein") {
+            setCurrentStep("select-subcategory");
+        } else {
+            const items = menuConfig.foodOptions[category] || [];
+            if (items.length > 0) {
+                setCurrentStep("select-item");
+            }
+        }
+    };
 
     const handleSubcategorySelect = (subcategory) => {
-    setSelectionState(prev => ({ ...prev, subcategory }));
-    const items = menuConfig.foodOptions[selectionState.category][subcategory];
-    if (Array.isArray(items) && items.length > 0) {
-        setCurrentStep("select-item");
-    }
-};
+        setSelectionState(prev => ({ ...prev, subcategory }));
+        const items = menuConfig.foodOptions.Protein[subcategory] || [];
+        if (items.length > 0) {
+            setCurrentStep("select-item");
+        }
+    };
 
     const handleMethodSelect = (method) => {
-    // For condiments, we don't need cooking methods - directly add the component
-    if (selectionState.category === "Condiments") {
-        addComponent(""); // Empty string for method since it's not applicable
-        return;
-    }
-
-    // For other items, proceed with normal method selection
-    setSelectionState(prev => ({ ...prev, method }));
-    if (selectionState.category === "Protein" && 
-        selectionState.subcategory === "Beef") {
-        setCurrentStep("select-temp");
-    } else {
-        addComponent(method);
-    }
-};
+        setSelectionState(prev => ({ ...prev, method }));
+        if (selectionState.category === "Protein" && 
+            selectionState.subcategory === "Beef") {
+            setCurrentStep("select-temp");
+        } else {
+            addComponent(method);
+        }
+    };
 
     const handleTempSelect = (temp) => {
         addComponent(selectionState.method, temp);
@@ -697,55 +677,38 @@ const calculateDishPrice = () => {
                                             }}
                                         >
                                             {component && (
-    <div style={{
-        position: 'absolute',
-        inset: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '4px',
-        textAlign: 'center'
-    }}>
-        <div style={{
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            color: '#1f2937'
-        }}>
-            {/* Always show the item name */}
-            <div>{component.item}</div>
-            
-            {/* Show subcategory for condiments */}
-            {component.category === "Condiments" && (
-                <div style={{
-                    fontSize: '0.75rem',
-                    color: '#4b5563'
-                }}>
-                    {component.subcategory}
-                </div>
-            )}
-            
-            {/* Show cooking details for non-condiments */}
-            {component.category !== "Condiments" && component.method && (
-                <>
-                    {component.temp && (
-                        <div style={{
-                            fontSize: '0.75rem',
-                            color: '#4b5563'
-                        }}>
-                            {component.temp}
-                        </div>
-                    )}
-                    <div style={{
-                        fontSize: '0.75rem',
-                        color: '#4b5563'
-                    }}>
-                        {component.method}
-                    </div>
-                </>
-            )}
-        </div>
-    </div>
-)}
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    inset: 0,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    padding: '4px',
+                                                    textAlign: 'center'
+                                                }}>
+                                                    <div style={{
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: 500,
+                                                        color: '#1f2937'
+                                                    }}>
+                                                        {component.item}
+                                                        {component.temp && (
+                                                            <div style={{
+                                                                fontSize: '0.75rem',
+                                                                color: '#4b5563'
+                                                            }}>
+                                                                {component.temp}
+                                                            </div>
+                                                        )}
+                                                        <div style={{
+                                                            fontSize: '0.75rem',
+                                                            color: '#4b5563'
+                                                        }}>
+                                                            {component.method}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 }
@@ -818,76 +781,48 @@ const calculateDishPrice = () => {
                             )}
 
                             {currentStep === "select-subcategory" && (
-    <div>
-        <h3 className="text-lg font-semibold mb-3">Select Type</h3>
-        <div className="grid grid-cols-2 gap-2">
-            {(() => {
-                const category = selectionState.category;
-                if (category === 'Condiments') {
-                    return ['Sauces', 'Toppings', 'Garnish'].map((subcategory) => (
-                        <button
-                            key={subcategory}
-                            type="button"
-                            onClick={() => {
-                                console.log('Clicked subcategory:', subcategory);
-                                handleSubcategorySelect(subcategory);
-                            }}
-                            className="p-2 bg-white border rounded hover:bg-gray-50 cursor-pointer"
-                        >
-                            {subcategory}
-                        </button>
-                    ));
-                } else if (category === 'Protein') {
-                    return Object.keys(menuConfig.foodOptions.Protein).map((subcategory) => (
-                        <button
-                            key={subcategory}
-                            type="button"
-                            onClick={() => handleSubcategorySelect(subcategory)}
-                            className="p-2 bg-white border rounded hover:bg-gray-50 cursor-pointer"
-                        >
-                            {subcategory}
-                        </button>
-                    ));
-                }
-                return null;
-            })()}
-        </div>
-    </div>
-)}
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-3">Select Type</h3>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {Object.keys(menuConfig.foodOptions.Protein).map((subcategory) => (
+                                            <button
+                                                key={subcategory}
+                                                onClick={() => handleSubcategorySelect(subcategory)}
+                                                className="p-2 bg-white border rounded hover:bg-gray-50"
+                                            >
+                                                {subcategory}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {currentStep === "select-item" && (
-    <div>
-        <h3 className="text-lg font-semibold mb-3">Select Item</h3>
-        <div className="grid grid-cols-2 gap-2">
-            {(() => {
-                let items;
-                if (selectionState.category === "Protein") {
-                    items = menuConfig.foodOptions.Protein[selectionState.subcategory];
-                } else if (selectionState.category === "Condiments") {
-                    items = menuConfig.foodOptions.Condiments[selectionState.subcategory];
-                } else {
-                    items = menuConfig.foodOptions[selectionState.category];
-                }
-                return Array.isArray(items) ? items.map((item) => (
-                    <button
-                        key={item}
-                        onClick={() => handleItemSelect(item)}
-                        className="p-2 bg-white border rounded hover:bg-gray-50"
-                    >
-                        {item}
-                    </button>
-                )) : null;
-            })()}
-        </div>
-    </div>
-)}
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-3">Select Item</h3>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {(selectionState.category === "Protein"
+                                            ? menuConfig.foodOptions.Protein[selectionState.subcategory]
+                                            : menuConfig.foodOptions[selectionState.category]
+                                        ).map((item) => (
+                                            <button
+                                                key={item}
+                                                onClick={() => handleItemSelect(item)}
+                                                className="p-2 bg-white border rounded hover:bg-gray-50"
+                                            >
+                                                {item}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {currentStep === "select-method" && (
                                 <div>
                                     <h3 className="text-lg font-semibold mb-3">Select Cooking Method</h3>
                                     <div className="grid grid-cols-2 gap-2">
                                         {(menuConfig.cookingMethods[selectionState.subcategory || selectionState.category] || 
-                                          ["Roasted", "Raw"]).map((method) => (
+                                          ["Grilled", "Fried", "Steamed", "Raw"]).map((method) => (
                                             <button
                                                 key={method}
                                                 onClick={() => handleMethodSelect(method)}
@@ -920,30 +855,23 @@ const calculateDishPrice = () => {
 
                         {/* Layer Components Display */}
                         <div style={styles.layerSection}>
-    <h3 style={styles.subHeading}>Layer {currentLayer + 1} Components</h3>
-    {layers[currentLayer].components.map((component, index) => (
-        <div key={index} style={styles.componentCard}>
-            <div>{component.item}</div>
-            {component.category !== "Condiments" && component.method && (
-                <div className="text-sm text-gray-600">
-                    {component.method}
-                    {component.temp && ` - ${component.temp}`}
-                </div>
-            )}
-            {component.category === "Condiments" && (
-                <div className="text-sm text-gray-600">
-                    Condiment
-                </div>
-            )}
-            <button
-                style={styles.deleteButton}
-                onClick={() => deleteComponent(currentLayer, index)}
-            >
-                ×
-            </button>
-        </div>
-    ))}
-</div>
+                            <h3 style={styles.subHeading}>Layer {currentLayer + 1} Components</h3>
+                            {layers[currentLayer].components.map((component, index) => (
+                                <div key={index} style={styles.componentCard}>
+                                    <div>{component.item}</div>
+                                    <div className="text-sm text-gray-600">
+                                        {component.method}
+                                        {component.temp && ` - ${component.temp}`}
+                                    </div>
+                                    <button
+                                        style={styles.deleteButton}
+                                        onClick={() => deleteComponent(currentLayer, index)}
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
 
                         {/* Add to Cart Button for Custom Plate */}
                         {layers.some(layer => layer.components.length > 0) && (
@@ -990,6 +918,7 @@ const calculateDishPrice = () => {
                                     </div>
                                 )}
 
+// Fixed version of the beverages and allergens section
 {/* Beverages Section */}
 {selectedDish.recommended_beverage && selectedDish.recommended_beverage.length > 0 && (
     <div className="mb-6">

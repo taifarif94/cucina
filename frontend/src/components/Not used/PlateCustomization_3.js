@@ -171,7 +171,7 @@ const PlateCustomization = ({ dishes = [] }) => {
     const [selectedDish, setSelectedDish] = useState(null);
     const [cart, setCart] = useState([]);
     const [selectedAddOns, setSelectedAddOns] = useState([]);
-    const [selectedBeverages, setSelectedBeverages] = useState([]);
+    const [selectedBeverage, setSelectedBeverage] = useState(null);
 	const recommended_data = localStorage.getItem("filter_data");
 	console.log("Recommended dishes:", recommended_data);
     // Plate Builder States
@@ -240,15 +240,15 @@ const PlateCustomization = ({ dishes = [] }) => {
             resetPlateBuilder();
         } else {
             setCart([...cart, {
-        id: Date.now(),
-        type: 'dish',
-        dish: selectedDish,
-        addOns: selectedAddOns,
-        beverages: selectedBeverages,
-        price: calculateDishPrice(),
-    }]);
-    setSelectedAddOns([]);
-    setSelectedBeverages([]);
+                id: Date.now(),
+                type: 'dish',
+                dish: selectedDish,
+                addOns: selectedAddOns,
+                beverage: selectedBeverage,
+                price: calculateDishPrice()
+            }]);
+            setSelectedAddOns([]);
+            setSelectedBeverage(null);
         }
     };
 
@@ -263,28 +263,13 @@ const PlateCustomization = ({ dishes = [] }) => {
             setSelectedAddOns([...selectedAddOns, addon]);
         }
     };
-	
-	const handleBeverageToggle = (beverage) => {
-    setSelectedBeverages((prev) =>
-        prev.includes(beverage)
-            ? prev.filter((b) => b !== beverage) // Remove if already selected
-            : [...prev, beverage] // Add if not selected
-    );
-	};
 
-
-const calculateDishPrice = () => {
-    let total = selectedDish ? Number(selectedDish.price || 0) : 0;
-    
-    // Add up all add-ons
-    total += selectedAddOns.reduce((sum, addon) => sum + Number(addon.price || 0), 0);
-    
-    // Add up all selected beverages
-    total += selectedBeverages.reduce((sum, beverage) => sum + Number(beverage.price || 0), 0);
-    
-    return total;
-};
-
+    const calculateDishPrice = () => {
+        let total = selectedDish ? Number(selectedDish.price || 0) : 0;
+        total += selectedAddOns.reduce((sum, addon) => sum + Number(addon.price || 0), 0);
+        total += selectedBeverage ? Number(selectedBeverage.price || 0) : 0;
+        return total;
+    };
 
     const calculateCustomPlatePrice = () => {
         return layers.reduce((total, layer) => {
@@ -376,90 +361,70 @@ const calculateDishPrice = () => {
     };
 
     const handleItemSelect = (item) => {
-    setSelectionState(prev => ({ ...prev, item }));
-    if (selectionState.category === "Condiments") {
-        // For condiments, directly add the component without method selection
-        addComponent(null);  // Pass null for method since condiments don't need cooking methods
-    } else {
+        setSelectionState(prev => ({ ...prev, item }));
         setCurrentStep("select-method");
-    }
-};
-
-    const addComponent = (method, temp = null) => {
-    const spaces = 
-        selectionState.category === "Protein" &&
-        selectionState.subcategory === "Beef"
-            ? 4
-            : 1;
-
-    // Create the component object with all necessary fields
-    const newComponent = {
-        position: selectedSquare,
-        spaces: spaces,
-        category: selectionState.category,
-        subcategory: selectionState.subcategory,
-        item: selectionState.item, // This should contain the actual condiment name
-        // Only include method and temp for non-condiments
-        ...(selectionState.category !== "Condiments" && {
-            method: method,
-            temp: temp
-        })
     };
 
-    const updatedLayers = layers.map(layer => {
-        if (layer.id === currentLayer) {
-            return {
-                ...layer,
-                components: [...layer.components, newComponent]
-            };
-        }
-        return layer;
-    });
+    const addComponent = (method, temp = null) => {
+        const spaces =
+            selectionState.category === "Protein" &&
+            selectionState.subcategory === "Beef"
+                ? 4
+                : 1;
 
-    setLayers(updatedLayers);
-    resetSelections();
-};
+        const newComponent = {
+            position: selectedSquare,
+            spaces: spaces,
+            category: selectionState.category,
+            subcategory: selectionState.subcategory,
+            item: selectionState.item,
+            method: method,
+            temp: temp,
+        };
+
+        const updatedLayers = layers.map(layer => {
+            if (layer.id === currentLayer) {
+                return {
+                    ...layer,
+                    components: [...layer.components, newComponent]
+                };
+            }
+            return layer;
+        });
+
+        setLayers(updatedLayers);
+        resetSelections();
+    };
 
     const handleCategorySelect = (category) => {
-    setSelectionState(prev => ({ ...prev, category }));
-    // Clear previous subcategory and item when selecting a new category
-    setSelectionState(prev => ({ ...prev, subcategory: null, item: null }));
-    
-    // Check if the category has subcategories (is an object with nested structure)
-    const categoryData = menuConfig.foodOptions[category];
-    if (typeof categoryData === 'object' && 
-        !Array.isArray(categoryData) && 
-        categoryData !== null) {
-        setCurrentStep("select-subcategory");
-    } else if (Array.isArray(categoryData) && categoryData.length > 0) {
-        setCurrentStep("select-item");
-    }
-};
+        setSelectionState(prev => ({ ...prev, category }));
+        if (category === "Protein") {
+            setCurrentStep("select-subcategory");
+        } else {
+            const items = menuConfig.foodOptions[category] || [];
+            if (items.length > 0) {
+                setCurrentStep("select-item");
+            }
+        }
+    };
 
     const handleSubcategorySelect = (subcategory) => {
-    setSelectionState(prev => ({ ...prev, subcategory }));
-    const items = menuConfig.foodOptions[selectionState.category][subcategory];
-    if (Array.isArray(items) && items.length > 0) {
-        setCurrentStep("select-item");
-    }
-};
+        setSelectionState(prev => ({ ...prev, subcategory }));
+        const items = menuConfig.foodOptions.Protein[subcategory] || [];
+        if (items.length > 0) {
+            setCurrentStep("select-item");
+        }
+    };
 
     const handleMethodSelect = (method) => {
-    // For condiments, we don't need cooking methods - directly add the component
-    if (selectionState.category === "Condiments") {
-        addComponent(""); // Empty string for method since it's not applicable
-        return;
-    }
-
-    // For other items, proceed with normal method selection
-    setSelectionState(prev => ({ ...prev, method }));
-    if (selectionState.category === "Protein" && 
-        selectionState.subcategory === "Beef") {
-        setCurrentStep("select-temp");
-    } else {
-        addComponent(method);
-    }
-};
+        setSelectionState(prev => ({ ...prev, method }));
+        if (selectionState.category === "Protein" && 
+            selectionState.subcategory === "Beef") {
+            setCurrentStep("select-temp");
+        } else {
+            addComponent(method);
+        }
+    };
 
     const handleTempSelect = (temp) => {
         addComponent(selectionState.method, temp);
@@ -697,55 +662,38 @@ const calculateDishPrice = () => {
                                             }}
                                         >
                                             {component && (
-    <div style={{
-        position: 'absolute',
-        inset: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '4px',
-        textAlign: 'center'
-    }}>
-        <div style={{
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            color: '#1f2937'
-        }}>
-            {/* Always show the item name */}
-            <div>{component.item}</div>
-            
-            {/* Show subcategory for condiments */}
-            {component.category === "Condiments" && (
-                <div style={{
-                    fontSize: '0.75rem',
-                    color: '#4b5563'
-                }}>
-                    {component.subcategory}
-                </div>
-            )}
-            
-            {/* Show cooking details for non-condiments */}
-            {component.category !== "Condiments" && component.method && (
-                <>
-                    {component.temp && (
-                        <div style={{
-                            fontSize: '0.75rem',
-                            color: '#4b5563'
-                        }}>
-                            {component.temp}
-                        </div>
-                    )}
-                    <div style={{
-                        fontSize: '0.75rem',
-                        color: '#4b5563'
-                    }}>
-                        {component.method}
-                    </div>
-                </>
-            )}
-        </div>
-    </div>
-)}
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    inset: 0,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    padding: '4px',
+                                                    textAlign: 'center'
+                                                }}>
+                                                    <div style={{
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: 500,
+                                                        color: '#1f2937'
+                                                    }}>
+                                                        {component.item}
+                                                        {component.temp && (
+                                                            <div style={{
+                                                                fontSize: '0.75rem',
+                                                                color: '#4b5563'
+                                                            }}>
+                                                                {component.temp}
+                                                            </div>
+                                                        )}
+                                                        <div style={{
+                                                            fontSize: '0.75rem',
+                                                            color: '#4b5563'
+                                                        }}>
+                                                            {component.method}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 }
@@ -818,76 +766,48 @@ const calculateDishPrice = () => {
                             )}
 
                             {currentStep === "select-subcategory" && (
-    <div>
-        <h3 className="text-lg font-semibold mb-3">Select Type</h3>
-        <div className="grid grid-cols-2 gap-2">
-            {(() => {
-                const category = selectionState.category;
-                if (category === 'Condiments') {
-                    return ['Sauces', 'Toppings', 'Garnish'].map((subcategory) => (
-                        <button
-                            key={subcategory}
-                            type="button"
-                            onClick={() => {
-                                console.log('Clicked subcategory:', subcategory);
-                                handleSubcategorySelect(subcategory);
-                            }}
-                            className="p-2 bg-white border rounded hover:bg-gray-50 cursor-pointer"
-                        >
-                            {subcategory}
-                        </button>
-                    ));
-                } else if (category === 'Protein') {
-                    return Object.keys(menuConfig.foodOptions.Protein).map((subcategory) => (
-                        <button
-                            key={subcategory}
-                            type="button"
-                            onClick={() => handleSubcategorySelect(subcategory)}
-                            className="p-2 bg-white border rounded hover:bg-gray-50 cursor-pointer"
-                        >
-                            {subcategory}
-                        </button>
-                    ));
-                }
-                return null;
-            })()}
-        </div>
-    </div>
-)}
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-3">Select Type</h3>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {Object.keys(menuConfig.foodOptions.Protein).map((subcategory) => (
+                                            <button
+                                                key={subcategory}
+                                                onClick={() => handleSubcategorySelect(subcategory)}
+                                                className="p-2 bg-white border rounded hover:bg-gray-50"
+                                            >
+                                                {subcategory}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {currentStep === "select-item" && (
-    <div>
-        <h3 className="text-lg font-semibold mb-3">Select Item</h3>
-        <div className="grid grid-cols-2 gap-2">
-            {(() => {
-                let items;
-                if (selectionState.category === "Protein") {
-                    items = menuConfig.foodOptions.Protein[selectionState.subcategory];
-                } else if (selectionState.category === "Condiments") {
-                    items = menuConfig.foodOptions.Condiments[selectionState.subcategory];
-                } else {
-                    items = menuConfig.foodOptions[selectionState.category];
-                }
-                return Array.isArray(items) ? items.map((item) => (
-                    <button
-                        key={item}
-                        onClick={() => handleItemSelect(item)}
-                        className="p-2 bg-white border rounded hover:bg-gray-50"
-                    >
-                        {item}
-                    </button>
-                )) : null;
-            })()}
-        </div>
-    </div>
-)}
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-3">Select Item</h3>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {(selectionState.category === "Protein"
+                                            ? menuConfig.foodOptions.Protein[selectionState.subcategory]
+                                            : menuConfig.foodOptions[selectionState.category]
+                                        ).map((item) => (
+                                            <button
+                                                key={item}
+                                                onClick={() => handleItemSelect(item)}
+                                                className="p-2 bg-white border rounded hover:bg-gray-50"
+                                            >
+                                                {item}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {currentStep === "select-method" && (
                                 <div>
                                     <h3 className="text-lg font-semibold mb-3">Select Cooking Method</h3>
                                     <div className="grid grid-cols-2 gap-2">
                                         {(menuConfig.cookingMethods[selectionState.subcategory || selectionState.category] || 
-                                          ["Roasted", "Raw"]).map((method) => (
+                                          ["Grilled", "Fried", "Steamed", "Raw"]).map((method) => (
                                             <button
                                                 key={method}
                                                 onClick={() => handleMethodSelect(method)}
@@ -920,30 +840,23 @@ const calculateDishPrice = () => {
 
                         {/* Layer Components Display */}
                         <div style={styles.layerSection}>
-    <h3 style={styles.subHeading}>Layer {currentLayer + 1} Components</h3>
-    {layers[currentLayer].components.map((component, index) => (
-        <div key={index} style={styles.componentCard}>
-            <div>{component.item}</div>
-            {component.category !== "Condiments" && component.method && (
-                <div className="text-sm text-gray-600">
-                    {component.method}
-                    {component.temp && ` - ${component.temp}`}
-                </div>
-            )}
-            {component.category === "Condiments" && (
-                <div className="text-sm text-gray-600">
-                    Condiment
-                </div>
-            )}
-            <button
-                style={styles.deleteButton}
-                onClick={() => deleteComponent(currentLayer, index)}
-            >
-                ×
-            </button>
-        </div>
-    ))}
-</div>
+                            <h3 style={styles.subHeading}>Layer {currentLayer + 1} Components</h3>
+                            {layers[currentLayer].components.map((component, index) => (
+                                <div key={index} style={styles.componentCard}>
+                                    <div>{component.item}</div>
+                                    <div className="text-sm text-gray-600">
+                                        {component.method}
+                                        {component.temp && ` - ${component.temp}`}
+                                    </div>
+                                    <button
+                                        style={styles.deleteButton}
+                                        onClick={() => deleteComponent(currentLayer, index)}
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
 
                         {/* Add to Cart Button for Custom Plate */}
                         {layers.some(layer => layer.components.length > 0) && (
@@ -990,62 +903,62 @@ const calculateDishPrice = () => {
                                     </div>
                                 )}
 
-{/* Beverages Section */}
-{selectedDish.recommended_beverage && selectedDish.recommended_beverage.length > 0 && (
-    <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-3">Beverages</h3>
-        <div className="grid grid-cols-2 gap-4">
-            {selectedDish.recommended_beverage.map((beverage, index) => (
-                <div
-                    key={index}
-                    onClick={() => handleBeverageToggle(beverage)}
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors
-                        ${selectedBeverages.includes(beverage) 
-                            ? 'bg-blue-50 border-blue-500' 
-                            : 'hover:bg-gray-50'
-                        }`}
-                >
-                    <div className="flex justify-between items-center">
-                        <span>{beverage.name}</span>
-                        <span className="text-gray-600">${Number(beverage.price).toFixed(2)}</span>
-                    </div>
-                </div>
-            ))}
-        </div>
-    </div>
-)}
+                                {/* Beverages Section */}
+                                {selectedDish.recommended_beverage && (
+                                    <div className="mb-6">
+                                        <h3 className="text-lg font-semibold mb-3">Recommended Beverages</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {selectedDish.recommended_beverage.map((beverage, index) => (
+                                                <div
+                                                    key={index}
+                                                    onClick={() => setSelectedBeverage(beverage)}
+                                                    className={`p-3 border rounded-lg cursor-pointer transition-colors
+                                                        ${selectedBeverage === beverage 
+                                                            ? 'bg-blue-50 border-blue-500' 
+                                                            : 'hover:bg-gray-50'
+                                                        }`}
+                                                >
+                                                    <div className="flex justify-between items-center">
+                                                        <span>{beverage.name}</span>
+                                                        <span className="text-gray-600">${Number(beverage.price).toFixed(2)}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
-{/* Allergens Warning */}
-{selectedDish.allergens && (
-    <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <h3 className="text-sm font-semibold text-yellow-800">Allergen Information</h3>
-        <p className="text-sm text-yellow-700">{selectedDish.allergens}</p>
-    </div>
-)}
+                                {/* Allergens Warning */}
+                                {selectedDish.allergens && (
+                                    <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                        <h3 className="text-sm font-semibold text-yellow-800">Allergen Information</h3>
+                                        <p className="text-sm text-yellow-700">{selectedDish.allergens}</p>
+                                    </div>
+                                )}
 
                                 {/* Total Price Calculation */}
-<div className="border-t pt-4 mt-4">
-    <div className="flex justify-between items-center mb-4">
-        <span className="font-semibold">Base Price:</span>
-        <span>${selectedDish.price}</span>
-    </div>
-    {selectedAddOns.length > 0 && (
-        <div className="flex justify-between items-center mb-4">
-            <span className="font-semibold">Add-ons:</span>
-            <span>${selectedAddOns.reduce((sum, addon) => sum + addon.price, 0).toFixed(2)}</span>
-        </div>
-    )}
-    {selectedBeverages.length > 0 && (
-        <div className="flex justify-between items-center mb-4">
-            <span className="font-semibold">Beverages:</span>
-            <span>${selectedBeverages.reduce((sum, beverage) => sum + Number(beverage.price), 0).toFixed(2)}</span>
-        </div>
-    )}
-    <div className="flex justify-between items-center text-lg font-bold">
-        <span>Total:</span>
-        <span>${calculateDishPrice().toFixed(2)}</span>
-    </div>
-</div>
+                                <div className="border-t pt-4 mt-4">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="font-semibold">Base Price:</span>
+                                        <span>${selectedDish.price}</span>
+                                    </div>
+                                    {selectedAddOns.length > 0 && (
+                                        <div className="flex justify-between items-center mb-4">
+                                            <span className="font-semibold">Add-ons:</span>
+                                            <span>${selectedAddOns.reduce((sum, addon) => sum + addon.price, 0).toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                    {selectedBeverage && (
+                                        <div className="flex justify-between items-center mb-4">
+                                            <span className="font-semibold">Beverage:</span>
+                                            <span>${Number(selectedBeverage.price).toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between items-center text-lg font-bold">
+                                        <span>Total:</span>
+                                        <span>${calculateDishPrice().toFixed(2)}</span>
+                                    </div>
+                                </div>
 
                                 {/* Add to Cart Button */}
                                 <button
